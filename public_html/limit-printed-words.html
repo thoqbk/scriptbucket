@@ -1,0 +1,118 @@
+﻿<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script type="text/javascript">
+            var limitedWordsCount = 1;
+            function go() {
+                var originalHTML = $( "#articleContent" ).html();
+                var currentWordsCount = 0;
+                var regex = /<\/?[a-z]+([^\/>]*|(\s*[a-z]+\s*=\s*[\'\"].*[\'\"])+)\/?>|[^<>]*/i;
+                var remainingHTML = originalHTML;
+                $( "#limitedWordsCount" ).val( limitedWordsCount );
+                var result = "";
+                var isFull = false;
+                while ( remainingHTML.length > 0 ) {
+                    var matches = remainingHTML.match( regex );
+                    if ( matches == null ) {
+                        remainingHTML = "";
+                    } else {
+                        var firstMatch = matches[0];
+                        remainingHTML = remainingHTML.substring( firstMatch.length );
+                        //console.log("Remaining HTML: "+remainingHTML);
+                        console.log( "Match: " + firstMatch );
+                        if ( isFull ) {
+                            switch ( getMatchType( firstMatch ) ) {
+                                case "open":
+                                case "text":
+                                {
+                                    break;
+                                }
+                                default :
+                                {
+                                    result += firstMatch;
+                                }
+                            }
+                        } else {
+                            if ( getMatchType( firstMatch ) == "text" ) {
+                                var tempSubcontent = subcontent( firstMatch, limitedWordsCount - currentWordsCount );
+                                console.log( "--" + tempSubcontent );
+                                result += " " + tempSubcontent;
+                                currentWordsCount += countWords( tempSubcontent );
+                            } else {
+                                result += firstMatch;
+                            }
+                            if ( currentWordsCount == limitedWordsCount ) {
+                                isFull = true;
+                            }
+                        }
+                    }
+                }
+                $( "#result" ).html( result );
+                limitedWordsCount++;
+            }
+
+            function getMatchType( match ) {
+                var retVal = "";
+                if ( match != null && match.charAt( 0 ) == '<' && match.charAt( 1 ) != '/' ) {
+                    retVal = "open";
+                } else if ( match != null && ( match.length == 0 || match.charAt( 0 ) != '<' ) ) {
+                    retVal = "text";
+                }
+                //return
+                return retVal;
+            }
+
+            function subcontent( content, wordsCount ) {
+                var seperatorRegex = /\s+/gi;
+                var match;
+                var currentWordsCount = 0;
+                var stdContent = content.trim();
+                while ( currentWordsCount < wordsCount ) {
+                    match = seperatorRegex.exec( stdContent );
+                    if(match != null){
+                        currentWordsCount++;
+                    }else{
+                        break;
+                    }
+                }
+                if ( currentWordsCount < wordsCount ) {
+                    retVal = stdContent;
+                } else {
+                    retVal = stdContent.substring( 0, match.index );
+                }
+                console.log( "subcontent:" + retVal + "; wordsCount: " + wordsCount );
+                //return
+                return retVal;
+            }
+
+            function countWords( content ) {
+                var retVal = 0;
+                if ( content != null && content.length > 0 ) {
+                    var seperatorRegex = /[^\s]+/gi;
+                    while ( seperatorRegex.exec( content ) != null ) {
+                        retVal++;
+                    }
+                }
+                //return
+                return retVal;
+            }
+        </script>
+    </head>
+    <body>
+        <div id="articleContent">
+            Hello world, <br/>
+            <p><b>Click</b> to change the <span id="tag">html</span></p>
+            <p>to a <span id="text">text</span> node.</p><br/>
+            <p>This <button name="nada"><i><b><font color="red"><u>button</u></font></b></i></button> does nothing.</p>		
+            This picture <img src="http://i.stack.imgur.com/b4Bjq.png?s=128&g=1"/> is the most beautiful picture.<b></b>
+        </div>
+        <hr/>
+        <div>
+            <input type="text" size=5 id="limitedWordsCount" disabled="disabled" value="0"/>
+            <button onclick="go()">go</button>
+        </div>
+        <hr/>
+        <div id="result">
+        </div>
+    </body>
+</html>
